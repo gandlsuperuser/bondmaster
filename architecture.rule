@@ -1,0 +1,37 @@
+# BondMaster Architecture Rules
+
+## Tech Stack
+- Next.js 15+
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Supabase
+- PostgreSQL
+- Vercel
+
+## Standards
+- Strict TypeScript
+- Server Actions
+- Zod validation
+- React Query
+- RBAC
+- Row Level Security
+- Audit logs
+- Responsive UI
+- Dark mode
+
+## Folder Structure
+/app
+/components
+/modules
+/lib
+/hooks
+/actions
+/store
+/types
+
+## Naming
+- Components: PascalCase
+- Hooks: useXxx
+- Server actions: verbNoun
+- DB tables: snake_case

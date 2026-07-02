@@ -1,0 +1,362 @@
+# BondMaster Development Rules
+Version: 1.0
+Framework: Next.js 15+ (App Router)
+Language: TypeScript
+Hosting: Vercel
+Backend: Supabase PostgreSQL
+UI: Tailwind CSS + shadcn/ui
+
+---
+
+# Development Rules
+
+- Never remove completed functionality.
+- Mark completed items with `[X]`.
+- Mark incomplete items with `[ ]`.
+- Build one module at a time.
+- Every feature must include:
+  - UI
+  - Database
+  - Validation
+  - API / Server Actions
+  - Permissions
+  - Audit Logging
+  - Responsive Design
+- Never break existing APIs.
+- All database operations use Server Actions.
+- Validate all forms with Zod.
+- Every table supports:
+  - Pagination
+  - Search
+  - Sorting
+  - Filtering
+  - CSV Export
+- Every record has:
+  - Created By
+  - Updated By
+  - Created At
+  - Updated At
+- Every important action generates an Activity Log.
+
+---
+
+# 1. Core Project Setup
+
+* [X] Initialize Next.js 15 project with TypeScript
+* [X] Configure Tailwind CSS
+* [X] Configure ESLint
+* [X] Configure Prettier
+* [X] Install shadcn/ui
+* [X] Install TanStack Table
+* [X] Install React Hook Form
+* [X] Install Zod
+* [X] Install React Query
+* [X] Install Framer Motion
+* [X] Install Lucide React
+* [X] Install Supabase Client
+* [X] Install Resend
+* [X] Install Twilio SDK
+* [X] Install Stripe SDK
+* [X] Configure environment variables
+* [X] Create project folder structure
+* [X] Configure middleware
+* [X] Configure dark mode
+* [X] Configure command palette
+
+---
+
+# 2. Authentication
+
+* [ ] Supabase Authentication
+* [ ] Login
+* [ ] Logout
+* [ ] Forgot Password
+* [ ] Reset Password
+* [ ] Invite User
+* [ ] Organization Support
+* [ ] Multi-Tenant Authentication
+* [ ] Session Management
+* [ ] MFA Ready
+
+---
+
+# 3. Roles & Permissions
+
+* [ ] Administrator
+* [ ] Manager
+* [ ] Agent
+* [ ] Receptionist
+* [ ] Collector
+* [ ] Read Only
+* [ ] Permission Matrix
+* [ ] Route Protection
+* [ ] Role-based Navigation
+
+---
+
+# 4. Dashboard
+
+* [ ] KPI Cards
+* [ ] Revenue
+* [ ] Active Bonds
+* [ ] Pending Payments
+* [ ] Pending Signatures
+* [ ] Upcoming Court Dates
+* [ ] Agent Activity
+* [ ] Notifications
+* [ ] Calendar Widget
+* [ ] Charts
+* [ ] Quick Actions
+
+---
+
+# 5. Defendant Management
+
+* [ ] CRUD
+* [ ] Search
+* [ ] Filters
+* [ ] Tags
+* [ ] Timeline
+* [ ] Activity History
+* [ ] Notes
+* [ ] Internal Notes
+* [ ] Attachments
+* [ ] SMS History
+* [ ] Email History
+* [ ] Court Dates
+* [ ] Check-In History
+* [ ] Payment History
+
+---
+
+# 6. Bond Management
+
+* [ ] Create Bond
+* [ ] Edit Bond
+* [ ] Bond Timeline
+* [ ] Charges
+* [ ] Court Information
+* [ ] Premium
+* [ ] Collateral
+* [ ] Status Workflow
+* [ ] Bond Search
+* [ ] Bond Dashboard
+
+---
+
+# 7. Indemnitor Management
+
+* [ ] CRUD
+* [ ] Relationships
+* [ ] Employment
+* [ ] Address History
+* [ ] Documents
+* [ ] Signatures
+* [ ] Credit Notes
+
+---
+
+# 8. Payment System
+
+* [ ] Stripe Integration
+* [ ] Cash Payments
+* [ ] ACH Payments
+* [ ] Card Payments
+* [ ] Payment Plans
+* [ ] Auto Payments
+* [ ] Receipts
+* [ ] Refunds
+* [ ] Payment History
+* [ ] Outstanding Balance
+
+---
+
+# 9. Court Management
+
+* [ ] Court Calendar
+* [ ] Hearing Schedule
+* [ ] Judge Information
+* [ ] Case Numbers
+* [ ] Reminder Rules
+* [ ] Court Status
+
+---
+
+# 10. SMS Communication Center
+
+* [ ] Twilio Integration
+* [ ] Two-way SMS
+* [ ] Conversation View
+* [ ] Manual Messages
+* [ ] Bulk Messaging
+* [ ] Templates
+* [ ] Delivery Status
+* [ ] Failed Messages
+* [ ] Message Search
+* [ ] SMS Audit Log
+
+---
+
+# 11. Email Center
+
+* [ ] Resend Integration
+* [ ] Email Templates
+* [ ] Automated Emails
+* [ ] Email Tracking
+* [ ] Delivery Logs
+
+---
+
+# 12. Reminder Engine
+
+* [ ] Court Reminders
+* [ ] Payment Reminders
+* [ ] Check-In Reminders
+* [ ] Signature Reminders
+* [ ] Custom Reminder Rules
+* [ ] Retry Logic
+
+---
+
+# 13. Mobile Check-In
+
+* [ ] Secure SMS Link
+* [ ] GPS Capture
+* [ ] Timestamp
+* [ ] Selfie Upload
+* [ ] Device Info
+* [ ] Check-In Dashboard
+
+---
+
+# 14. Electronic Signatures
+
+* [ ] Signature Requests
+* [ ] Document Builder
+* [ ] Signature Fields
+* [ ] Initial Fields
+* [ ] Audit Trail
+* [ ] PDF Storage
+* [ ] Completed Documents
+* [ ] Reminder Emails
+
+---
+
+# 15. Document Management
+
+* [ ] PDF Generation
+* [ ] Templates
+* [ ] Merge Fields
+* [ ] Upload Documents
+* [ ] Version Control
+* [ ] Categories
+* [ ] OCR Ready
+
+---
+
+# 16. Reports
+
+* [ ] Revenue Reports
+* [ ] Collections
+* [ ] Agent Performance
+* [ ] Outstanding Balances
+* [ ] Court Reports
+* [ ] Export CSV
+* [ ] Export PDF
+
+---
+
+# 17. Activity Timeline
+
+* [ ] Global Timeline
+* [ ] Defendant Timeline
+* [ ] Bond Timeline
+* [ ] Payment Timeline
+* [ ] Document Timeline
+* [ ] SMS Timeline
+
+---
+
+# 18. Notifications
+
+* [ ] In-App Notifications
+* [ ] Push Notifications
+* [ ] Email Notifications
+* [ ] SMS Notifications
+* [ ] Notification Center
+
+---
+
+# 19. AI Assistant
+
+* [ ] AI Search
+* [ ] AI Case Summary
+* [ ] AI Collection Assistant
+* [ ] AI Notes
+* [ ] AI Reporting
+* [ ] AI Chat
+
+---
+
+# 20. Admin Settings
+
+* [ ] Organization Settings
+* [ ] Branding
+* [ ] Users
+* [ ] Roles
+* [ ] Subscription
+* [ ] API Keys
+* [ ] Email Settings
+* [ ] SMS Settings
+* [ ] Payment Settings
+
+---
+
+# 21. Security
+
+* [ ] Row Level Security
+* [ ] Audit Logs
+* [ ] IP Logging
+* [ ] Device Tracking
+* [ ] Encryption
+* [ ] Rate Limiting
+* [ ] Backup Strategy
+
+---
+
+# 22. Deployment
+
+* [ ] Production Environment
+* [ ] Vercel Deployment
+* [ ] Supabase Production
+* [ ] Environment Variables
+* [ ] Monitoring
+* [ ] Error Logging
+* [ ] Analytics
+
+---
+
+# 23. QA Checklist
+
+* [ ] Mobile Responsive
+* [ ] Accessibility
+* [ ] Dark Mode
+* [ ] Loading States
+* [ ] Error Handling
+* [ ] Empty States
+* [ ] Unit Tests
+* [ ] Integration Tests
+* [ ] Performance Optimization
+
+---
+
+# 24. Future Features
+
+* [ ] Native iOS App
+* [ ] Native Android App
+* [ ] AI Voice Assistant
+* [ ] Court API Integration
+* [ ] GPS Monitoring
+* [ ] Face Verification
+* [ ] Open API
+* [ ] Webhooks
