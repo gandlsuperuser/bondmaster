@@ -10,6 +10,7 @@ import {
   CheckSquare,
   ArrowRight,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   const features = [
@@ -86,10 +87,13 @@ export default function Home() {
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
-            <button className="h-11 px-6 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2">
+            <Link
+              href="/dashboard"
+              className="h-11 px-6 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2 cursor-pointer"
+            >
               Enter Dashboard
               <ArrowRight className="h-4 w-4" />
-            </button>
+            </Link>
             <button className="h-11 px-6 rounded-lg border bg-muted/30 font-medium hover:bg-muted/50 transition-colors">
               Documentation
             </button>
