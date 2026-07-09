@@ -47,7 +47,7 @@ export async function proxy(request: NextRequest) {
     }
   } else {
     // 2. Mock Auth Mode
-    isAuthenticated = request.cookies.has("bondmaster-mock-session");
+    isAuthenticated = request.cookies.has("bondsmaster-mock-session");
   }
 
   const isAuthRoute = ["/login", "/forgot-password", "/reset-password"].some(

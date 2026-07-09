@@ -17,15 +17,15 @@ export async function loginAction(prevState: any, formData: FormData) {
 
   // Check if we should use mock auth
   // We fall back to mock auth if Supabase isn't configured, OR if they use the special demo email.
-  const useMock = !isConfigured || email === "admin@bondmaster.com";
+  const useMock = !isConfigured || email === "admin@bondsmaster.com";
 
   if (useMock) {
     // Artificial delay for loading experience
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    if (email === "admin@bondmaster.com" && password === "admin123") {
+    if (email === "admin@bondsmaster.com" && password === "admin123") {
       const cookieStore = await cookies();
-      cookieStore.set("bondmaster-mock-session", "mock_session_token_xyz_12345", {
+      cookieStore.set("bondsmaster-mock-session", "mock_session_token_xyz_12345", {
         path: "/",
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -34,7 +34,7 @@ export async function loginAction(prevState: any, formData: FormData) {
       return { success: true };
     }
 
-    return { success: false, error: "Invalid email or password. (Demo: admin@bondmaster.com / admin123)" };
+    return { success: false, error: "Invalid email or password. (Demo: admin@bondsmaster.com / admin123)" };
   }
 
   // Supabase Authenticated Login
@@ -59,7 +59,7 @@ export async function logoutAction() {
   const cookieStore = await cookies();
   
   // Clean up mock cookie
-  cookieStore.delete("bondmaster-mock-session");
+  cookieStore.delete("bondsmaster-mock-session");
 
   // Clean up Supabase cookies if configured
   if (isSupabaseConfigured()) {
@@ -83,7 +83,7 @@ export async function forgotPasswordAction(prevState: any, formData: FormData) {
 
   const isConfigured = isSupabaseConfigured();
 
-  if (!isConfigured || email.endsWith("@bondmaster.com")) {
+  if (!isConfigured || email.endsWith("@bondsmaster.com")) {
     await new Promise((resolve) => setTimeout(resolve, 800));
     return {
       success: true,

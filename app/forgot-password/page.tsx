@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
                   <div className="flex flex-col gap-1">
                     <span>{successMessage}</span>
                     {/* Simulated email inbox link in mock mode */}
-                    {email.endsWith("@bondmaster.com") && (
+                    {email.endsWith("@bondsmaster.com") && (
                       <Link
                         href={`/reset-password?email=${encodeURIComponent(email)}`}
                         className="text-xs font-semibold underline text-emerald-700 dark:text-emerald-300 mt-2 hover:opacity-90 block"

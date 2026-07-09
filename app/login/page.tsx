@@ -38,7 +38,7 @@ function LoginForm() {
   const [passwordError, setPasswordError] = useState("");
 
   const handleDemoFill = () => {
-    setEmail("admin@bondmaster.com");
+    setEmail("admin@bondsmaster.com");
     setPassword("admin123");
     setEmailError("");
     setPasswordError("");
@@ -319,7 +319,7 @@ function LoginForm() {
                 Click this box to auto-fill the dummy administrator login credentials:
               </p>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-[11px] font-mono text-blue-800 dark:text-blue-200">
-                <span>Email: <strong className="underline decoration-dotted">admin@bondmaster.com</strong></span>
+                <span>Email: <strong className="underline decoration-dotted">admin@bondsmaster.com</strong></span>
                 <span>Pass: <strong className="underline decoration-dotted">admin123</strong></span>
               </div>
             </div>
