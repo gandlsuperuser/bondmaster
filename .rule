@@ -53,7 +53,7 @@ UI: Tailwind CSS + shadcn/ui
 * [X] Install React Query
 * [X] Install Framer Motion
 * [X] Install Lucide React
-* [X] Install Supabase Client
+* [ ] Install Neon Client
 * [X] Install Resend
 * [X] Install Twilio SDK
 * [X] Install Stripe SDK
@@ -81,18 +81,118 @@ UI: Tailwind CSS + shadcn/ui
 ---
 
 # 3. Roles & Permissions
+* [X] Set up PostgreSQL database
+* [X] Configure Prisma Schema:
+      -User Model
+      -Client Model
+      - Organization
+      - Role
+      - Permission
+      - UserRole
+      - Session
+      - AuditLog
 
-* [ ] Administrator
-* [ ] Manager
-* [ ] Agent
-* [ ] Receptionist
-* [ ] Collector
-* [ ] Read Only
-* [ ] Permission Matrix
-* [ ] Route Protection
-* [ ] Role-based Navigation
+      ### CRM
+      - Defendant
+      - DefendantAlias
+      - DefendantAddress
+      - DefendantEmployment
+      - DefendantEmergencyContact
+      - DefendantDocument
 
----
+    ### Co-Signers / Indemnitors
+    - Indemnitor
+    - IndemnitorAddress
+    - IndemnitorEmployment
+    - IndemnitorRelationship
+    - IndemnitorDocument
+
+    ### Bond Management
+    - Bond
+    - BondCharge
+    - BondStatusHistory
+    - BondPower
+    - BondCollateral
+    - BondAgentAssignment
+
+    ### Court
+    - Court
+    - CourtCase
+    - CourtDate
+    - CourtAppearance
+    - Judge
+
+    ### Payments
+    - Payment
+    - PaymentPlan
+    - PaymentInstallment
+    - Invoice
+    - Receipt
+    - Refund
+    - PaymentMethod
+
+    ### Documents
+    - Document
+    - DocumentTemplate
+    - Attachment
+    - Folder
+    - GeneratedPDF
+
+    ### Electronic Signature
+    - SignatureRequest
+    - SignatureRecipient
+    - SignatureField
+    - SignatureAudit
+    - SignedDocument
+
+    ### Communication
+    - Conversation
+    - SMSMessage
+    - EmailMessage
+    - MessageTemplate
+    - Notification
+    - NotificationRule
+
+    ### Check-In
+    - CheckIn
+    - CheckInLocation
+    - CheckInPhoto
+
+    ### Calendar & Tasks
+    - CalendarEvent
+    - Task
+    - TaskAssignment
+
+    ### Internal Notes
+    - Note
+    - PrivateNote
+    - ActivityLog
+
+    ### Reporting
+    - DashboardSnapshot
+    - SavedReport
+
+    ### AI
+    - AIConversation
+    - AICaseSummary
+
+    ### System
+    - OrganizationSetting
+    - Integration
+    - APIKey
+    - Webhook
+    - FileUpload
+    * [X] Administrator
+    * [X] Manager
+    * [X] Agent
+    * [X] Receptionist
+    * [X] Collector
+    * [X] Read Only
+    * [X] Permission Matrix
+    * [X] Route Protection
+    * [X] Role-based Navigation
+
+    ---
 
 # 4. Dashboard
 

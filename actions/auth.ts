@@ -6,7 +6,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { createHash } from "crypto";
 import { Resend } from "resend";
 
-import { sql } from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createSession, destroySession } from "@/lib/auth/session";
 import { createInvite, verifyInviteToken } from "@/lib/auth/invite";
@@ -45,49 +45,58 @@ export async function loginAction(_prev: any, formData: FormData) {
   }
 
   try {
-    const rows = await sql`
-      SELECT id, org_id, password_hash, role, first_name, last_name, is_active
-      FROM users
-      WHERE email = ${email}
-      LIMIT 1
-    `;
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        orgId: true,
+        passwordHash: true,
+        role: true,
+        firstName: true,
+        lastName: true,
+        isActive: true,
+      },
+    });
 
-    if (rows.length === 0) {
+    if (!user) {
       return { success: false, error: "Invalid email or password." };
     }
 
-    const user = rows[0];
-
-    if (!user.is_active) {
+    if (!user.isActive) {
       return {
         success: false,
         error: "Your account has been deactivated. Contact your administrator.",
       };
     }
 
-    if (!user.password_hash) {
+    if (!user.passwordHash) {
       return {
         success: false,
         error: "Account setup not complete. Please check your invite email.",
       };
     }
 
-    const isValid = await verifyPassword(password, user.password_hash);
+    const isValid = await verifyPassword(password, user.passwordHash);
     if (!isValid) {
       return { success: false, error: "Invalid email or password." };
     }
 
     const meta = await getClientMeta();
     await createSession(
-      { id: user.id, orgId: user.org_id, role: user.role },
+      { id: user.id, orgId: user.orgId, role: user.role },
       meta
     );
 
     // Audit log
-    await sql`
-      INSERT INTO activity_logs (org_id, user_id, action, metadata, ip_address)
-      VALUES (${user.org_id}, ${user.id}, 'login', ${JSON.stringify({ email })}, ${meta.ipAddress})
-    `;
+    await prisma.activityLog.create({
+      data: {
+        orgId: user.orgId,
+        userId: user.id,
+        action: "login",
+        metadata: { email },
+        ipAddress: meta.ipAddress,
+      },
+    });
 
     return { success: true };
   } catch (err: any) {
@@ -122,15 +131,13 @@ export async function forgotPasswordAction(_prev: any, formData: FormData) {
   };
 
   try {
-    const rows = await sql`
-      SELECT id, org_id, first_name FROM users
-      WHERE email = ${email} AND is_active = TRUE
-      LIMIT 1
-    `;
+    const user = await prisma.user.findFirst({
+      where: { email, isActive: true },
+      select: { id: true, orgId: true, firstName: true },
+    });
 
-    if (rows.length === 0) return genericSuccess;
+    if (!user) return genericSuccess;
 
-    const user = rows[0];
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     // Sign reset token
@@ -143,16 +150,19 @@ export async function forgotPasswordAction(_prev: any, formData: FormData) {
     const tokenHash = hashToken(token);
 
     // Invalidate any existing reset tokens for this user
-    await sql`
-      UPDATE password_reset_tokens SET used_at = NOW()
-      WHERE user_id = ${user.id} AND used_at IS NULL
-    `;
+    await prisma.passwordResetToken.updateMany({
+      where: { userId: user.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
 
     // Store new reset token
-    await sql`
-      INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
-      VALUES (${user.id}, ${tokenHash}, ${expiresAt.toISOString()})
-    `;
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+      },
+    });
 
     // Send reset email
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -163,14 +173,18 @@ export async function forgotPasswordAction(_prev: any, formData: FormData) {
       from: process.env.RESEND_FROM_EMAIL ?? "noreply@bondsmaster.com",
       to: email,
       subject: "Reset your BondsMaster password",
-      html: buildResetEmail(resetUrl, user.first_name || "there"),
+      html: buildResetEmail(resetUrl, user.firstName || "there"),
     });
 
     // Audit log
-    await sql`
-      INSERT INTO activity_logs (org_id, user_id, action, metadata)
-      VALUES (${user.org_id}, ${user.id}, 'password_reset_requested', ${JSON.stringify({ email })})
-    `;
+    await prisma.activityLog.create({
+      data: {
+        orgId: user.orgId,
+        userId: user.id,
+        action: "password_reset_requested",
+        metadata: { email },
+      },
+    });
 
     return genericSuccess;
   } catch (err: any) {
@@ -207,46 +221,52 @@ export async function resetPasswordAction(_prev: any, formData: FormData) {
     const tokenHash = hashToken(token);
 
     // Check token is in DB and unused
-    const rows = await sql`
-      SELECT prt.id, u.id AS user_id, u.org_id
-      FROM password_reset_tokens prt
-      JOIN users u ON u.id = prt.user_id
-      WHERE prt.token_hash = ${tokenHash}
-        AND prt.expires_at > NOW()
-        AND prt.used_at IS NULL
-      LIMIT 1
-    `;
+    const prt = await prisma.passwordResetToken.findFirst({
+      where: {
+        tokenHash,
+        expiresAt: { gt: new Date() },
+        usedAt: null,
+      },
+      include: {
+        user: true,
+      },
+    });
 
-    if (rows.length === 0) {
+    if (!prt) {
       return {
         success: false,
         error: "This reset link has expired or already been used.",
       };
     }
 
-    const { id: tokenId, user_id, org_id } = rows[0];
+    const { id: tokenId, user } = prt;
 
     // Update password
     const newHash = await hashPassword(password);
-    await sql`
-      UPDATE users SET password_hash = ${newHash}, updated_at = NOW()
-      WHERE id = ${user_id}
-    `;
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: newHash },
+    });
 
     // Invalidate token
-    await sql`
-      UPDATE password_reset_tokens SET used_at = NOW()
-      WHERE id = ${tokenId}
-    `;
+    await prisma.passwordResetToken.update({
+      where: { id: tokenId },
+      data: { usedAt: new Date() },
+    });
 
     // Revoke all existing sessions (security)
-    await sql`DELETE FROM sessions WHERE user_id = ${user_id}`;
+    await prisma.session.deleteMany({
+      where: { userId: user.id },
+    });
 
     // Audit log
-    await sql`
-      INSERT INTO activity_logs (org_id, user_id, action)
-      VALUES (${org_id}, ${user_id}, 'password_reset_completed')
-    `;
+    await prisma.activityLog.create({
+      data: {
+        orgId: user.orgId,
+        userId: user.id,
+        action: "password_reset_completed",
+      },
+    });
 
     return { success: true };
   } catch (err: any) {
@@ -270,15 +290,14 @@ export async function inviteUserAction(_prev: any, formData: FormData) {
   const result = await createInvite(email, role, orgId, invitedByUserId);
 
   if (result.success) {
-    await sql`
-      INSERT INTO activity_logs (org_id, user_id, action, metadata)
-      VALUES (
-        ${orgId},
-        ${invitedByUserId},
-        'invite_sent',
-        ${JSON.stringify({ invitedEmail: email, role })}
-      )
-    `;
+    await prisma.activityLog.create({
+      data: {
+        orgId,
+        userId: invitedByUserId,
+        action: "invite_sent",
+        metadata: { invitedEmail: email, role },
+      },
+    });
   }
 
   return result;
@@ -312,42 +331,46 @@ export async function acceptInviteAction(_prev: any, formData: FormData) {
     const tokenHash = hashToken(token);
 
     // Activate user
-    await sql`
-      UPDATE users
-      SET password_hash       = ${passwordHash},
-          first_name          = ${firstName},
-          last_name           = ${lastName},
-          is_active           = TRUE,
-          invite_token_hash   = NULL,
-          invite_expires_at   = NULL,
-          updated_at          = NOW()
-      WHERE invite_token_hash = ${tokenHash}
-        AND email             = ${invite.email}
-    `;
+    const updatedUser = await prisma.user.updateMany({
+      where: {
+        email: invite.email,
+        inviteTokenHash: tokenHash,
+      },
+      data: {
+        passwordHash,
+        firstName,
+        lastName,
+        isActive: true,
+        inviteTokenHash: null,
+        inviteExpiresAt: null,
+      },
+    });
 
-    // Fetch the activated user for session
-    const rows = await sql`
-      SELECT id, org_id, role FROM users WHERE email = ${invite.email} LIMIT 1
-    `;
-
-    if (rows.length === 0) {
+    if (updatedUser.count === 0) {
       return { success: false, error: "Could not activate account. Please contact support." };
     }
 
-    const user = rows[0];
+    const user = await prisma.user.findUnique({
+      where: { email: invite.email },
+      select: { id: true, orgId: true, role: true },
+    });
+    
+    if (!user) {
+      return { success: false, error: "Could not activate account. Please contact support." };
+    }
+
     const meta = await getClientMeta();
-    await createSession({ id: user.id, orgId: user.org_id, role: user.role }, meta);
+    await createSession({ id: user.id, orgId: user.orgId, role: user.role }, meta);
 
     // Audit log
-    await sql`
-      INSERT INTO activity_logs (org_id, user_id, action, metadata)
-      VALUES (
-        ${user.org_id},
-        ${user.id},
-        'invite_accepted',
-        ${JSON.stringify({ email: invite.email })}
-      )
-    `;
+    await prisma.activityLog.create({
+      data: {
+        orgId: user.orgId,
+        userId: user.id,
+        action: "invite_accepted",
+        metadata: { email: invite.email },
+      },
+    });
 
     return { success: true };
   } catch (err: any) {
@@ -378,9 +401,9 @@ function buildResetEmail(resetUrl: string, firstName: string): string {
   <div class="card">
     <div class="logo">🔒 BondsMaster</div>
     <h1>Reset your password</h1>
-    <p>Hi ${firstName},</p>
+    <p>Hi \${firstName},</p>
     <p>We received a request to reset your BondsMaster password. Click the button below to set a new one. This link expires in <strong>1 hour</strong>.</p>
-    <a href="${resetUrl}" class="btn">Reset Password →</a>
+    <a href="\${resetUrl}" class="btn">Reset Password →</a>
     <p class="footer">
       If you didn't request this, you can safely ignore this email. Your password will not change.
     </p>

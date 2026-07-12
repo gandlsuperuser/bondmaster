@@ -1,7 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
 import { createHash } from "crypto";
 import { Resend } from "resend";
-import { sql } from "@/lib/db";
+import { prisma } from "@/lib/db";
+import { UserRoleEnum } from "@prisma/client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,24 +50,24 @@ export async function createInvite(
     const tokenHash = hashToken(token);
 
     // Upsert user as pending (no password_hash yet)
-    await sql`
-      INSERT INTO users (org_id, email, role, invited_by, invite_token_hash, invite_expires_at, is_active)
-      VALUES (
-        ${orgId},
-        ${email},
-        ${role as any},
-        ${invitedByUserId},
-        ${tokenHash},
-        ${expiresAt.toISOString()},
-        FALSE
-      )
-      ON CONFLICT (email) DO UPDATE
-        SET invite_token_hash = ${tokenHash},
-            invite_expires_at = ${expiresAt.toISOString()},
-            invited_by        = ${invitedByUserId},
-            role              = ${role as any},
-            updated_at        = NOW()
-    `;
+    await prisma.user.upsert({
+      where: { email },
+      update: {
+        inviteTokenHash: tokenHash,
+        inviteExpiresAt: expiresAt,
+        invitedById: invitedByUserId,
+        role: role as UserRoleEnum,
+      },
+      create: {
+        orgId,
+        email,
+        role: role as UserRoleEnum,
+        invitedById: invitedByUserId,
+        inviteTokenHash: tokenHash,
+        inviteExpiresAt: expiresAt,
+        isActive: false,
+      },
+    });
 
     // Send invite email via Resend
     const siteUrl =
@@ -105,14 +106,14 @@ export async function verifyInviteToken(
     const tokenHash = hashToken(token);
 
     // Check it's still stored (not already accepted)
-    const rows = await sql`
-      SELECT id FROM users
-      WHERE invite_token_hash = ${tokenHash}
-        AND invite_expires_at > NOW()
-      LIMIT 1
-    `;
+    const user = await prisma.user.findFirst({
+      where: {
+        inviteTokenHash: tokenHash,
+        inviteExpiresAt: { gt: new Date() },
+      },
+    });
 
-    if (rows.length === 0) return null;
+    if (!user) return null;
     return payload;
   } catch {
     return null;
@@ -148,11 +149,11 @@ function buildInviteEmail(
     <div class="logo">🔒 BondsMaster</div>
     <h1>You've been invited!</h1>
     <p>You've been invited to join <strong>BondsMaster</strong> as a:</p>
-    <div class="badge">${roleName}</div>
+    <div class="badge">\${roleName}</div>
     <p>Click the button below to accept your invitation and set up your account.</p>
-    <a href="${inviteUrl}" class="btn">Accept Invitation →</a>
+    <a href="\${inviteUrl}" class="btn">Accept Invitation →</a>
     <p class="footer">
-      This link expires in ${expiryDays} days. If you did not expect this invitation, you can safely ignore this email.
+      This link expires in \${expiryDays} days. If you did not expect this invitation, you can safely ignore this email.
     </p>
   </div>
 </body>

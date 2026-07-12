@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { createHash, randomUUID } from "crypto";
-import { sql } from "@/lib/db";
+import { prisma } from "@/lib/db";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,16 +59,15 @@ export async function createSession(
 
   // Store hash in DB
   const tokenHash = hashToken(jti);
-  await sql`
-    INSERT INTO sessions (user_id, token_hash, expires_at, ip_address, user_agent)
-    VALUES (
-      ${user.id},
-      ${tokenHash},
-      ${expiresAt.toISOString()},
-      ${meta?.ipAddress ?? null},
-      ${meta?.userAgent ?? null}
-    )
-  `;
+  await prisma.session.create({
+    data: {
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+      ipAddress: meta?.ipAddress,
+      userAgent: meta?.userAgent,
+    },
+  });
 
   // Set httpOnly cookie
   const cookieStore = await cookies();
@@ -95,29 +94,29 @@ export async function getSession(): Promise<SessionUser | null> {
 
     // Verify session exists in DB (not revoked)
     const tokenHash = hashToken(payload.jti);
-    const rows = await sql`
-      SELECT s.id, u.id AS user_id, u.org_id, u.email, u.role,
-             u.first_name, u.last_name, u.avatar_url, u.mfa_enabled, u.is_active
-      FROM sessions s
-      JOIN users u ON u.id = s.user_id
-      WHERE s.token_hash = ${tokenHash}
-        AND s.expires_at > NOW()
-        AND u.is_active = TRUE
-      LIMIT 1
-    `;
+    const sessionRecord = await prisma.session.findFirst({
+      where: {
+        tokenHash,
+        expiresAt: { gt: new Date() },
+        user: { isActive: true },
+      },
+      include: {
+        user: true,
+      },
+    });
 
-    if (rows.length === 0) return null;
+    if (!sessionRecord) return null;
 
-    const u = rows[0];
+    const u = sessionRecord.user;
     return {
-      id: u.user_id,
-      orgId: u.org_id,
+      id: u.id,
+      orgId: u.orgId,
       email: u.email,
       role: u.role,
-      firstName: u.first_name,
-      lastName: u.last_name,
-      avatarUrl: u.avatar_url,
-      mfaEnabled: u.mfa_enabled,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      avatarUrl: u.avatarUrl,
+      mfaEnabled: u.mfaEnabled,
     };
   } catch {
     return null;
@@ -137,7 +136,9 @@ export async function destroySession(): Promise<void> {
       );
       if (payload?.jti) {
         const tokenHash = hashToken(payload.jti);
-        await sql`DELETE FROM sessions WHERE token_hash = ${tokenHash}`;
+        await prisma.session.delete({
+          where: { tokenHash },
+        }).catch(() => {});
       }
     }
 

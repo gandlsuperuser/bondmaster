@@ -1,0 +1,642 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────
+enum UserRoleEnum {
+  administrator
+  manager
+  agent
+  receptionist
+  collector
+  read_only
+}
+
+enum ActivityAction {
+  login
+  logout
+  invite_sent
+  invite_accepted
+  password_reset_requested
+  password_reset_completed
+  user_created
+  user_updated
+  user_deactivated
+  role_changed
+}
+
+// ─── Core & Auth ───────────────────────────────────────────
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  slug      String   @unique
+  logoUrl   String?  @map("logo_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users             User[]
+  activityLogs      ActivityLog[]
+  defendants        Defendant[]
+  bonds             Bond[]
+  settings          OrganizationSetting?
+  roles             Role[]
+}
+
+model User {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId           String   @map("org_id") @db.Uuid
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  email           String   @unique
+  passwordHash    String?  @map("password_hash")
+  role            UserRoleEnum @default(agent)
+  firstName       String   @default("") @map("first_name")
+  lastName        String   @default("") @map("last_name")
+  avatarUrl       String?  @map("avatar_url")
+  isActive        Boolean  @default(true) @map("is_active")
+
+  inviteTokenHash String?  @map("invite_token_hash")
+  inviteExpiresAt DateTime? @map("invite_expires_at")
+  invitedById     String?  @map("invited_by") @db.Uuid
+  invitedBy       User?    @relation("UserInvites", fields: [invitedById], references: [id])
+  invites         User[]   @relation("UserInvites")
+
+  mfaEnabled      Boolean  @default(false) @map("mfa_enabled")
+  mfaSecret       String?  @map("mfa_secret")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  sessions        Session[]
+  passwordResets  PasswordResetToken[]
+  activityLogs    ActivityLog[]
+  userRoles       UserRole[]
+  tasks           TaskAssignment[]
+}
+
+model Session {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+}
+
+model PasswordResetToken {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  usedAt     DateTime? @map("used_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+}
+
+model ActivityLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId      String?  @map("org_id") @db.Uuid
+  organization Organization? @relation(fields: [orgId], references: [id])
+  userId     String?  @map("user_id") @db.Uuid
+  user       User?    @relation(fields: [userId], references: [id])
+  action     ActivityAction
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id") @db.Uuid
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+}
+
+// ─── Roles & Permissions (Dynamic) ──────────────────────────
+model Role {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  organization Organization @relation(fields: [orgId], references: [id])
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissions Permission[]
+  userRoles   UserRole[]
+}
+
+model Permission {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @unique
+  roles     Role[]
+}
+
+model UserRole {
+  userId    String   @db.Uuid
+  roleId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model Client {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── CRM (Defendant) ───────────────────────────────────────
+model Defendant {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  organization Organization @relation(fields: [orgId], references: [id])
+  firstName String
+  lastName  String
+  dob       DateTime?
+  ssn       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  aliases          DefendantAlias[]
+  addresses        DefendantAddress[]
+  employments      DefendantEmployment[]
+  emergencyContacts DefendantEmergencyContact[]
+  documents        DefendantDocument[]
+  bonds            Bond[]
+  checkIns         CheckIn[]
+}
+
+model DefendantAlias {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  defendantId String   @db.Uuid
+  defendant   Defendant @relation(fields: [defendantId], references: [id], onDelete: Cascade)
+  name        String
+}
+
+model DefendantAddress {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  defendantId String   @db.Uuid
+  defendant   Defendant @relation(fields: [defendantId], references: [id], onDelete: Cascade)
+  street      String
+  city        String
+  state       String
+  zip         String
+  isPrimary   Boolean  @default(false)
+}
+
+model DefendantEmployment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  defendantId String   @db.Uuid
+  defendant   Defendant @relation(fields: [defendantId], references: [id], onDelete: Cascade)
+  employer    String
+  title       String?
+}
+
+model DefendantEmergencyContact {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  defendantId String   @db.Uuid
+  defendant   Defendant @relation(fields: [defendantId], references: [id], onDelete: Cascade)
+  name        String
+  phone       String
+  relation    String?
+}
+
+model DefendantDocument {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  defendantId String   @db.Uuid
+  defendant   Defendant @relation(fields: [defendantId], references: [id], onDelete: Cascade)
+  fileUrl     String
+  name        String
+}
+
+// ─── Co-Signers / Indemnitors ──────────────────────────────
+model Indemnitor {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName String
+  lastName  String
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  addresses     IndemnitorAddress[]
+  employments   IndemnitorEmployment[]
+  relationships IndemnitorRelationship[]
+  documents     IndemnitorDocument[]
+}
+
+model IndemnitorAddress {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  indemnitorId String     @db.Uuid
+  indemnitor   Indemnitor @relation(fields: [indemnitorId], references: [id], onDelete: Cascade)
+  street       String
+  city         String
+  state        String
+  zip          String
+}
+
+model IndemnitorEmployment {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  indemnitorId String     @db.Uuid
+  indemnitor   Indemnitor @relation(fields: [indemnitorId], references: [id], onDelete: Cascade)
+  employer     String
+}
+
+model IndemnitorRelationship {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  indemnitorId String     @db.Uuid
+  indemnitor   Indemnitor @relation(fields: [indemnitorId], references: [id], onDelete: Cascade)
+  bondId       String     @db.Uuid
+  bond         Bond       @relation(fields: [bondId], references: [id], onDelete: Cascade)
+  relationship String
+}
+
+model IndemnitorDocument {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  indemnitorId String     @db.Uuid
+  indemnitor   Indemnitor @relation(fields: [indemnitorId], references: [id], onDelete: Cascade)
+  fileUrl      String
+  name         String
+}
+
+// ─── Bond Management ───────────────────────────────────────
+model Bond {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId       String   @map("org_id") @db.Uuid
+  organization Organization @relation(fields: [orgId], references: [id])
+  defendantId String   @db.Uuid
+  defendant   Defendant @relation(fields: [defendantId], references: [id])
+  amount      Float
+  status      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  charges          BondCharge[]
+  statusHistory    BondStatusHistory[]
+  powers           BondPower[]
+  collateral       BondCollateral[]
+  agentAssignments BondAgentAssignment[]
+  indemnitors      IndemnitorRelationship[]
+  payments         Payment[]
+}
+
+model BondCharge {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bondId      String   @db.Uuid
+  bond        Bond     @relation(fields: [bondId], references: [id], onDelete: Cascade)
+  description String
+  degree      String?
+}
+
+model BondStatusHistory {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bondId    String   @db.Uuid
+  bond      Bond     @relation(fields: [bondId], references: [id], onDelete: Cascade)
+  status    String
+  changedAt DateTime @default(now())
+}
+
+model BondPower {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bondId    String   @db.Uuid
+  bond      Bond     @relation(fields: [bondId], references: [id], onDelete: Cascade)
+  powerNumber String
+  amount    Float
+}
+
+model BondCollateral {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bondId    String   @db.Uuid
+  bond      Bond     @relation(fields: [bondId], references: [id], onDelete: Cascade)
+  type      String
+  value     Float
+  description String?
+}
+
+model BondAgentAssignment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bondId    String   @db.Uuid
+  bond      Bond     @relation(fields: [bondId], references: [id], onDelete: Cascade)
+  agentId   String   @db.Uuid
+}
+
+// ─── Court ─────────────────────────────────────────────────
+model Court {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  county    String?
+  state     String?
+  cases     CourtCase[]
+}
+
+model CourtCase {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  courtId     String   @db.Uuid
+  court       Court    @relation(fields: [courtId], references: [id])
+  caseNumber  String
+  dates       CourtDate[]
+}
+
+model CourtDate {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  courtCaseId String   @db.Uuid
+  courtCase   CourtCase @relation(fields: [courtCaseId], references: [id])
+  date        DateTime
+  appearances CourtAppearance[]
+}
+
+model CourtAppearance {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  courtDateId String   @db.Uuid
+  courtDate   CourtDate @relation(fields: [courtDateId], references: [id])
+  defendantId String   @db.Uuid
+  status      String
+}
+
+model Judge {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName String
+  lastName  String
+  courtId   String?  @db.Uuid
+}
+
+// ─── Payments ──────────────────────────────────────────────
+model Payment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bondId    String   @db.Uuid
+  bond      Bond     @relation(fields: [bondId], references: [id])
+  amount    Float
+  date      DateTime @default(now())
+  methodId  String?  @db.Uuid
+  receipt   Receipt?
+}
+
+model PaymentPlan {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  totalAmount Float
+  installments PaymentInstallment[]
+}
+
+model PaymentInstallment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  planId      String   @db.Uuid
+  plan        PaymentPlan @relation(fields: [planId], references: [id])
+  dueDate     DateTime
+  amount      Float
+  paid        Boolean  @default(false)
+}
+
+model Invoice {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount    Float
+  dueDate   DateTime
+  status    String
+}
+
+model Receipt {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentId String   @unique @db.Uuid
+  payment   Payment  @relation(fields: [paymentId], references: [id])
+  url       String?
+}
+
+model Refund {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount    Float
+  reason    String?
+}
+
+model PaymentMethod {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type      String
+  last4     String?
+}
+
+// ─── Documents ─────────────────────────────────────────────
+model Document {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  url       String
+  folderId  String?  @db.Uuid
+  folder    Folder?  @relation(fields: [folderId], references: [id])
+}
+
+model DocumentTemplate {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  content   String
+}
+
+model Attachment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  url       String
+}
+
+model Folder {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  documents Document[]
+}
+
+model GeneratedPDF {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  url       String
+}
+
+// ─── Electronic Signature ──────────────────────────────────
+model SignatureRequest {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status    String
+  documentId String  @db.Uuid
+  recipients SignatureRecipient[]
+}
+
+model SignatureRecipient {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId String   @db.Uuid
+  request   SignatureRequest @relation(fields: [requestId], references: [id])
+  email     String
+  status    String
+}
+
+model SignatureField {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  x         Float
+  y         Float
+  page      Int
+}
+
+model SignatureAudit {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  action    String
+  timestamp DateTime @default(now())
+}
+
+model SignedDocument {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  url       String
+}
+
+// ─── Communication ─────────────────────────────────────────
+model Conversation {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  channel   String
+  messages  SMSMessage[]
+}
+
+model SMSMessage {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String   @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  content        String
+  direction      String
+  createdAt      DateTime @default(now())
+}
+
+model EmailMessage {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subject   String
+  body      String
+  to        String
+}
+
+model MessageTemplate {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  content   String
+}
+
+model Notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message   String
+  read      Boolean  @default(false)
+}
+
+model NotificationRule {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  event     String
+  action    String
+}
+
+// ─── Check-In ──────────────────────────────────────────────
+model CheckIn {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  defendantId String   @db.Uuid
+  defendant   Defendant @relation(fields: [defendantId], references: [id])
+  timestamp   DateTime @default(now())
+  status      String
+  location    CheckInLocation?
+  photo       CheckInPhoto?
+}
+
+model CheckInLocation {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  checkInId String   @unique @db.Uuid
+  checkIn   CheckIn  @relation(fields: [checkInId], references: [id])
+  lat       Float
+  lng       Float
+}
+
+model CheckInPhoto {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  checkInId String   @unique @db.Uuid
+  checkIn   CheckIn  @relation(fields: [checkInId], references: [id])
+  url       String
+}
+
+// ─── Calendar & Tasks ──────────────────────────────────────
+model CalendarEvent {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title     String
+  start     DateTime
+  end       DateTime
+}
+
+model Task {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  description String?
+  dueDate     DateTime?
+  assignments TaskAssignment[]
+}
+
+model TaskAssignment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId    String   @db.Uuid
+  task      Task     @relation(fields: [taskId], references: [id])
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// ─── Internal Notes ────────────────────────────────────────
+model Note {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model PrivateNote {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content   String
+  createdAt DateTime @default(now())
+}
+
+// ─── Reporting ─────────────────────────────────────────────
+model DashboardSnapshot {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  data      Json
+  createdAt DateTime @default(now())
+}
+
+model SavedReport {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  config    Json
+}
+
+// ─── AI ────────────────────────────────────────────────────
+model AIConversation {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  summary   String?
+  createdAt DateTime @default(now())
+}
+
+model AICaseSummary {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content   String
+  createdAt DateTime @default(now())
+}
+
+// ─── System ────────────────────────────────────────────────
+model OrganizationSetting {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId     String   @unique @db.Uuid
+  organization Organization @relation(fields: [orgId], references: [id])
+  config    Json
+}
+
+model Integration {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  enabled   Boolean  @default(false)
+}
+
+model APIKey {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key       String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Webhook {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  url       String
+  events    String[]
+}
+
+model FileUpload {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  url       String
+  size      Int
+}
