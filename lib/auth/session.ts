@@ -163,3 +163,22 @@ export async function verifySessionToken(
 }
 
 export { COOKIE_NAME };
+
+import { hasPermission, Permission } from "./permissions";
+
+/**
+ * Throws an error if the current session does not have the required permission.
+ * Useful for server actions.
+ */
+export async function requirePermission(permission: Permission) {
+  const session = await getSession();
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  if (!hasPermission(session.role, permission)) {
+    throw new Error("Forbidden: Insufficient permissions");
+  }
+
+  return session;
+}

@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
             <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400">
-            BondMaster
+            BondsMaster
           </span>
         </div>
 

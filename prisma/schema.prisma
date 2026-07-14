@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── Enums ──────────────────────────────────────────────────
@@ -27,6 +28,9 @@ enum ActivityAction {
   user_updated
   user_deactivated
   role_changed
+  defendant_created
+  defendant_updated
+  defendant_deleted
 }
 
 // ─── Core & Auth ───────────────────────────────────────────
@@ -156,6 +160,9 @@ model Defendant {
   lastName  String
   dob       DateTime?
   ssn       String?
+  phone     String?
+  email     String?
+  tags      String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -166,6 +173,11 @@ model Defendant {
   documents        DefendantDocument[]
   bonds            Bond[]
   checkIns         CheckIn[]
+  courtAppearances CourtAppearance[]
+  notes            Note[]
+  privateNotes     PrivateNote[]
+  conversations    Conversation[]
+  emails           EmailMessage[]
 }
 
 model DefendantAlias {
@@ -270,6 +282,8 @@ model Bond {
   defendant   Defendant @relation(fields: [defendantId], references: [id])
   amount      Float
   status      String
+  arrestDate  DateTime?
+  releasedDate DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -352,6 +366,7 @@ model CourtAppearance {
   courtDateId String   @db.Uuid
   courtDate   CourtDate @relation(fields: [courtDateId], references: [id])
   defendantId String   @db.Uuid
+  defendant   Defendant @relation(fields: [defendantId], references: [id])
   status      String
 }
 
@@ -481,9 +496,11 @@ model SignedDocument {
 
 // ─── Communication ─────────────────────────────────────────
 model Conversation {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  channel   String
-  messages  SMSMessage[]
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  channel     String
+  defendantId String?  @db.Uuid
+  defendant   Defendant? @relation(fields: [defendantId], references: [id], onDelete: Cascade)
+  messages    SMSMessage[]
 }
 
 model SMSMessage {
@@ -496,10 +513,12 @@ model SMSMessage {
 }
 
 model EmailMessage {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  subject   String
-  body      String
-  to        String
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  defendantId String?  @db.Uuid
+  defendant   Defendant? @relation(fields: [defendantId], references: [id], onDelete: Cascade)
+  subject     String
+  body        String
+  to          String
 }
 
 model MessageTemplate {
@@ -572,15 +591,19 @@ model TaskAssignment {
 
 // ─── Internal Notes ────────────────────────────────────────
 model Note {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  content   String
-  createdAt DateTime @default(now())
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  defendantId String    @db.Uuid
+  defendant   Defendant @relation(fields: [defendantId], references: [id], onDelete: Cascade)
+  content     String
+  createdAt   DateTime  @default(now())
 }
 
 model PrivateNote {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  content   String
-  createdAt DateTime @default(now())
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  defendantId String    @db.Uuid
+  defendant   Defendant @relation(fields: [defendantId], references: [id], onDelete: Cascade)
+  content     String
+  createdAt   DateTime  @default(now())
 }
 
 // ─── Reporting ─────────────────────────────────────────────

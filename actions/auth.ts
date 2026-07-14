@@ -109,7 +109,7 @@ export async function loginAction(_prev: any, formData: FormData) {
 
 export async function logoutAction() {
   await destroySession();
-  redirect("/login");
+  redirect("/");
 }
 
 // ─── Forgot Password ──────────────────────────────────────────────────────────

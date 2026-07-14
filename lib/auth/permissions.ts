@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth/session";
+
 
 // Define all available permissions
 export type Permission =
@@ -107,19 +107,3 @@ export function hasPermission(role: string, permission: Permission): boolean {
   return permissions.includes(permission);
 }
 
-/**
- * Throws an error if the current session does not have the required permission.
- * Useful for server actions.
- */
-export async function requirePermission(permission: Permission) {
-  const session = await getSession();
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-
-  if (!hasPermission(session.role, permission)) {
-    throw new Error("Forbidden: Insufficient permissions");
-  }
-
-  return session;
-}

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { verifySessionToken, COOKIE_NAME } from "@/lib/auth/session";
+import { verifySessionToken, COOKIE_NAME } from "@/lib/auth/session-edge";
 
 const AUTH_ROUTES = ["/login", "/forgot-password", "/reset-password", "/invite"];
 const PROTECTED_PREFIX = "/dashboard";
@@ -27,9 +27,11 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── Route classification ─────────────────────────────────────────────────
-  const isAuthRoute = AUTH_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(route + "/")
-  );
+  const isAuthRoute =
+    pathname === "/" ||
+    AUTH_ROUTES.some(
+      (route) => pathname === route || pathname.startsWith(route + "/")
+    );
   const isProtectedRoute =
     pathname === PROTECTED_PREFIX ||
     pathname.startsWith(PROTECTED_PREFIX + "/");
@@ -37,7 +39,7 @@ export async function proxy(request: NextRequest) {
   // ── Redirect unauthenticated users away from protected routes ────────────
   if (isProtectedRoute && !isAuthenticated) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/";
     url.searchParams.set("redirectedFrom", pathname);
     return NextResponse.redirect(url);
   }

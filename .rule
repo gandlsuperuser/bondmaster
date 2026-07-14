@@ -196,36 +196,36 @@ UI: Tailwind CSS + shadcn/ui
 
 # 4. Dashboard
 
-* [ ] KPI Cards
-* [ ] Revenue
-* [ ] Active Bonds
-* [ ] Pending Payments
-* [ ] Pending Signatures
-* [ ] Upcoming Court Dates
-* [ ] Agent Activity
-* [ ] Notifications
-* [ ] Calendar Widget
-* [ ] Charts
-* [ ] Quick Actions
+* [X] KPI Cards
+* [X] Revenue
+* [X] Active Bonds
+* [X] Pending Payments
+* [X] Pending Signatures
+* [X] Upcoming Court Dates
+* [X] Agent Activity
+* [X] Notifications
+* [X] Calendar Widget
+* [X] Charts
+* [X] Quick Actions
 
 ---
 
 # 5. Defendant Management
 
-* [ ] CRUD
-* [ ] Search
-* [ ] Filters
-* [ ] Tags
-* [ ] Timeline
-* [ ] Activity History
-* [ ] Notes
-* [ ] Internal Notes
-* [ ] Attachments
-* [ ] SMS History
-* [ ] Email History
-* [ ] Court Dates
-* [ ] Check-In History
-* [ ] Payment History
+* [X] CRUD
+* [X] Search
+* [X] Filters
+* [X] Tags
+* [X] Timeline
+* [X] Activity History
+* [X] Notes
+* [X] Internal Notes
+* [X] Attachments
+* [X] SMS History
+* [X] Email History
+* [X] Court Dates
+* [X] Check-In History
+* [X] Payment History
 
 ---
 
@@ -446,11 +446,24 @@ UI: Tailwind CSS + shadcn/ui
 * [ ] Empty States
 * [ ] Unit Tests
 * [ ] Integration Tests
-* [ ] Performance Optimization
+  * [ ] Performance Optimization
 
 ---
 
-# 24. Future Features
+# 24. Bailbond E-sign
+
+* [ ] E-sign Document Templates (Bail Bond Agreements, Indemnitor Agreements)
+* [ ] Defendant Signatures
+* [ ] Co-signer / Indemnitor Signatures
+* [ ] Agent Countersignatures
+* [ ] Send E-sign Request via SMS/Email
+* [ ] E-sign Tracking & Status Dashboard
+* [ ] PDF Document Generation & Export
+* [ ] Legal Compliance Audit Trail
+
+---
+
+# 25. Future Features
 
 * [ ] Native iOS App
 * [ ] Native Android App

@@ -11,7 +11,7 @@ export default async function DashboardLayout({
   const session = await getSession();
 
   if (!session) {
-    redirect("/login");
+    redirect("/");
   }
 
   // Allow everyone with at least 'view_dashboard' permission to access the dashboard routes
