@@ -35,6 +35,10 @@ enum ActivityAction {
   bond_updated
   bond_deleted
   bond_status_changed
+  email_sent
+  email_failed
+  reminder_sent
+  reminder_failed
 }
 
 // ─── Core & Auth ───────────────────────────────────────────
@@ -53,6 +57,10 @@ model Organization {
   settings          OrganizationSetting?
   roles             Role[]
   indemnitors       Indemnitor[]
+  emailMessages     EmailMessage[]
+  emailTemplates    EmailTemplate[]
+  reminderRules     ReminderRule[]
+  reminderLogs      ReminderLog[]
 }
 
 model User {
@@ -520,12 +528,35 @@ model SMSMessage {
 }
 
 model EmailMessage {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  defendantId String?  @db.Uuid
-  defendant   Defendant? @relation(fields: [defendantId], references: [id], onDelete: Cascade)
-  subject     String
-  body        String
-  to          String
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId        String    @map("org_id") @db.Uuid
+  organization Organization @relation(fields: [orgId], references: [id])
+  defendantId  String?   @db.Uuid
+  defendant    Defendant? @relation(fields: [defendantId], references: [id], onDelete: Cascade)
+  from         String    @default("noreply@bondsmaster.com")
+  to           String
+  subject      String
+  body         String
+  direction    String    @default("outbound")
+  status       String    @default("queued") // queued | sent | delivered | opened | failed
+  resendId     String?   @map("resend_id")
+  sentAt       DateTime? @map("sent_at")
+  deliveredAt  DateTime? @map("delivered_at")
+  openedAt     DateTime? @map("opened_at")
+  failedReason String?   @map("failed_reason")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+}
+
+model EmailTemplate {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  organization Organization @relation(fields: [orgId], references: [id])
+  name      String
+  subject   String
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 }
 
 model MessageTemplate {
@@ -540,10 +571,37 @@ model Notification {
   read      Boolean  @default(false)
 }
 
-model NotificationRule {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  event     String
-  action    String
+model ReminderRule {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId           String   @map("org_id") @db.Uuid
+  organization    Organization @relation(fields: [orgId], references: [id])
+  name            String
+  eventType       String   @map("event_type")  // court_date | payment_due | check_in | signature
+  channel         String   @default("sms")     // sms | email | both
+  offsetMinutes   Int      @default(1440) @map("offset_minutes") // how far in advance (default 24h)
+  messageTemplate String   @map("message_template")
+  emailSubject    String?  @map("email_subject")
+  isActive        Boolean  @default(true) @map("is_active")
+  maxRetries      Int      @default(2) @map("max_retries")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  logs            ReminderLog[]
+}
+
+model ReminderLog {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId        String   @map("org_id") @db.Uuid
+  organization Organization @relation(fields: [orgId], references: [id])
+  ruleId       String   @map("rule_id") @db.Uuid
+  rule         ReminderRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  defendantId  String?  @map("defendant_id") @db.Uuid
+  channel      String   // sms | email
+  status       String   @default("sent") // sent | failed | skipped
+  retryCount   Int      @default(0) @map("retry_count")
+  errorMessage String?  @map("error_message")
+  sentAt       DateTime? @map("sent_at")
+  createdAt    DateTime @default(now()) @map("created_at")
 }
 
 // ─── Check-In ──────────────────────────────────────────────

@@ -121,10 +121,15 @@ export async function sendEmailAction(
   try {
     const email = await prisma.emailMessage.create({
       data: {
+        orgId: session.orgId,
         defendantId,
+        from: process.env.RESEND_FROM_EMAIL ?? "noreply@bondsmaster.com",
         subject,
         body,
         to,
+        direction: "outbound",
+        status: "sent",
+        sentAt: new Date(),
       },
     });
 

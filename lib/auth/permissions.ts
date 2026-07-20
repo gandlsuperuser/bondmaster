@@ -12,6 +12,10 @@ export type Permission =
   | "manage_payments"
   | "view_sms"
   | "manage_sms"
+  | "view_email"
+  | "manage_email"
+  | "view_reminders"
+  | "manage_reminders"
   | "view_signatures"
   | "manage_signatures"
   | "view_reports"
@@ -38,6 +42,10 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "manage_payments",
     "view_sms",
     "manage_sms",
+    "view_email",
+    "manage_email",
+    "view_reminders",
+    "manage_reminders",
     "view_signatures",
     "manage_signatures",
     "view_reports",
@@ -53,6 +61,10 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "manage_payments",
     "view_sms",
     "manage_sms",
+    "view_email",
+    "manage_email",
+    "view_reminders",
+    "manage_reminders",
     "view_signatures",
     "manage_signatures",
     "view_reports",
@@ -66,6 +78,10 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "view_payments",
     "view_sms",
     "manage_sms",
+    "view_email",
+    "manage_email",
+    "view_reminders",
+    "manage_reminders",
     "view_signatures",
     "manage_signatures",
   ],
@@ -76,6 +92,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "view_payments",
     "manage_payments",
     "view_sms",
+    "view_email",
+    "view_reminders",
   ],
   collector: [
     "view_dashboard",
@@ -85,6 +103,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "manage_payments",
     "view_sms",
     "manage_sms",
+    "view_email",
+    "view_reminders",
   ],
   read_only: [
     "view_dashboard",
@@ -92,6 +112,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "view_bonds",
     "view_payments",
     "view_sms",
+    "view_email",
+    "view_reminders",
     "view_signatures",
     "view_reports",
   ],

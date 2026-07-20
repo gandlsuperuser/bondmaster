@@ -275,48 +275,48 @@ UI: Tailwind CSS + shadcn/ui
 
 # 9. Court Management
 
-* [ ] Court Calendar
-* [ ] Hearing Schedule
-* [ ] Judge Information
-* [ ] Case Numbers
-* [ ] Reminder Rules
-* [ ] Court Status
+* [X] Court Calendar
+* [X] Hearing Schedule
+* [X] Judge Information
+* [X] Case Numbers
+* [X] Reminder Rules
+* [X] Court Status
 
 ---
 
 # 10. SMS Communication Center
 
-* [ ] Twilio Integration
-* [ ] Two-way SMS
-* [ ] Conversation View
-* [ ] Manual Messages
-* [ ] Bulk Messaging
-* [ ] Templates
-* [ ] Delivery Status
-* [ ] Failed Messages
-* [ ] Message Search
-* [ ] SMS Audit Log
+* [X] Twilio Integration
+* [X] Two-way SMS
+* [X] Conversation View
+* [X] Manual Messages
+* [X] Bulk Messaging
+* [X] Templates
+* [X] Delivery Status
+* [X] Failed Messages
+* [X] Message Search
+* [X] SMS Audit Log
 
 ---
 
 # 11. Email Center
 
-* [ ] Resend Integration
-* [ ] Email Templates
-* [ ] Automated Emails
-* [ ] Email Tracking
-* [ ] Delivery Logs
+* [X] Resend Integration
+* [X] Email Templates
+* [X] Automated Emails
+* [X] Email Tracking
+* [X] Delivery Logs
 
 ---
 
 # 12. Reminder Engine
 
-* [ ] Court Reminders
-* [ ] Payment Reminders
-* [ ] Check-In Reminders
-* [ ] Signature Reminders
-* [ ] Custom Reminder Rules
-* [ ] Retry Logic
+* [X] Court Reminders
+* [X] Payment Reminders
+* [X] Check-In Reminders
+* [X] Signature Reminders
+* [X] Custom Reminder Rules
+* [X] Retry Logic
 
 ---
 
